@@ -1294,7 +1294,7 @@ fn shop_opts(shop: &Shop, run: &RunState) -> Vec<Opt> {
     opts
 }
 
-fn event_view(id: u8, run: &RunState, t: f32) -> ChoiceView {
+pub(crate) fn event_view(id: u8, run: &RunState, t: f32) -> ChoiceView {
     let e = |o: u8| Act::Event(id, o);
     let (title, art, color, text, opts): (&str, &'static [&'static str], Color, &str, Vec<Opt>) =
         match id {
