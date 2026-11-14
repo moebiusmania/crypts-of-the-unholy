@@ -71,7 +71,12 @@ impl Fx {
     }
 
     pub fn hit_age(&self, w: Who) -> Option<f32> {
-        self.hits.iter().rev().find(|h| h.0 == w).map(|h| self.t - h.1).filter(|a| *a >= 0.0)
+        self.hits
+            .iter()
+            .rev()
+            .find(|h| h.0 == w)
+            .map(|h| self.t - h.1)
+            .filter(|a| *a >= 0.0)
     }
 
     pub fn death_age(&self, i: usize) -> Option<f32> {
@@ -80,10 +85,30 @@ impl Fx {
 
     fn float(&mut self, who: Who, text: String, color: Color) {
         // Stagger texts on the same target so multi-hits read in sequence.
-        let last = self.floats.iter().filter(|f| f.who == who).map(|f| f.t0).fold(f32::MIN, f32::max);
-        let t0 = if last > self.t - 0.15 { last + 0.15 } else { self.t };
-        let lane = self.floats.iter().filter(|f| f.who == who && self.t - f.t0 < 0.6).count() as i32 % 3;
-        self.floats.push(Float { who, text, color, t0, lane });
+        let last = self
+            .floats
+            .iter()
+            .filter(|f| f.who == who)
+            .map(|f| f.t0)
+            .fold(f32::MIN, f32::max);
+        let t0 = if last > self.t - 0.15 {
+            last + 0.15
+        } else {
+            self.t
+        };
+        let lane = self
+            .floats
+            .iter()
+            .filter(|f| f.who == who && self.t - f.t0 < 0.6)
+            .count() as i32
+            % 3;
+        self.floats.push(Float {
+            who,
+            text,
+            color,
+            t0,
+            lane,
+        });
     }
 
     pub fn ingest(&mut self, ev: Ev, class: Class) {

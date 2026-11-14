@@ -48,13 +48,16 @@ pub fn scale(c: Color, k: f32) -> Color {
 
 /// Smooth pseudo-noise in roughly 0.0..1.0, used for torch and glow flicker.
 pub fn flicker(t: f32, seed: f32) -> f32 {
-    let n = (t * 7.3 + seed).sin() * 0.5 + (t * 13.7 + seed * 2.1).sin() * 0.3 + (t * 3.1 + seed * 0.7).sin() * 0.2;
+    let n = (t * 7.3 + seed).sin() * 0.5
+        + (t * 13.7 + seed * 2.1).sin() * 0.3
+        + (t * 3.1 + seed * 0.7).sin() * 0.2;
     0.5 + n * 0.5
 }
 
 /// Cheap integer hash for per-cell randomness in effects.
 pub fn hash(x: u32, y: u32, s: u32) -> u32 {
-    let mut h = x.wrapping_mul(374_761_393) ^ y.wrapping_mul(668_265_263) ^ s.wrapping_mul(2_246_822_519);
+    let mut h =
+        x.wrapping_mul(374_761_393) ^ y.wrapping_mul(668_265_263) ^ s.wrapping_mul(2_246_822_519);
     h = (h ^ (h >> 13)).wrapping_mul(1_274_126_177);
     h ^ (h >> 16)
 }

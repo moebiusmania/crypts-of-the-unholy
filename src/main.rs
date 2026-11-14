@@ -7,9 +7,9 @@ mod fx;
 mod model;
 mod rng;
 mod run;
-mod theme;
 #[cfg(test)]
 mod tests;
+mod theme;
 mod tutorial;
 mod ui;
 

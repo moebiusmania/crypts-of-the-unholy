@@ -215,7 +215,7 @@ dependencies = [
 
 [[package]]
 name = "crypts_of_the_unholy"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "ratatui",
  "serde",

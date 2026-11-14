@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use ratatui::style::Color;
 use serde::{Deserialize, Serialize};
 
-use crate::cards::{class_pool, starter_deck, Card, Rarity};
+use crate::cards::{Card, Rarity, class_pool, starter_deck};
 use crate::model::{Class, Relic};
 use crate::rng::Rng;
 use crate::theme;
@@ -36,7 +36,9 @@ impl RoomKind {
 
     pub fn desc(self) -> &'static str {
         match self {
-            RoomKind::Combat => "Restless dead stir behind this door. Fight for gold and a new card.",
+            RoomKind::Combat => {
+                "Restless dead stir behind this door. Fight for gold and a new card."
+            }
             RoomKind::Elite => "A powerful horror waits within. Dangerous, but it guards a relic.",
             RoomKind::Shrine => "A ruined chapel. Rest to heal, or pray to empower a card.",
             RoomKind::Treasure => "A sealed sarcophagus. Something precious lies inside.",
@@ -111,7 +113,8 @@ impl RunState {
     }
 
     pub fn current_room(&self) -> Option<RoomKind> {
-        self.pending.and_then(|i| self.map.get(self.floor)?.get(i).copied())
+        self.pending
+            .and_then(|i| self.map.get(self.floor)?.get(i).copied())
     }
 
     pub fn heal(&mut self, n: i32) {
@@ -127,8 +130,16 @@ impl RunState {
     }
 
     pub fn random_relic(&mut self) -> Option<Relic> {
-        let avail: Vec<Relic> = Relic::ALL.iter().copied().filter(|r| !self.relics.contains(r)).collect();
-        if avail.is_empty() { None } else { Some(*self.rng.pick(&avail)) }
+        let avail: Vec<Relic> = Relic::ALL
+            .iter()
+            .copied()
+            .filter(|r| !self.relics.contains(r))
+            .collect();
+        if avail.is_empty() {
+            None
+        } else {
+            Some(*self.rng.pick(&avail))
+        }
     }
 
     pub fn random_card(&mut self, rare_bias: f32) -> Card {
@@ -141,8 +152,16 @@ impl RunState {
             Rarity::Common
         };
         let pool = class_pool(self.class);
-        let matching: Vec<_> = pool.iter().copied().filter(|&id| Card::new(id).def().rarity == want).collect();
-        let id = if matching.is_empty() { *self.rng.pick(&pool) } else { *self.rng.pick(&matching) };
+        let matching: Vec<_> = pool
+            .iter()
+            .copied()
+            .filter(|&id| Card::new(id).def().rarity == want)
+            .collect();
+        let id = if matching.is_empty() {
+            *self.rng.pick(&pool)
+        } else {
+            *self.rng.pick(&matching)
+        };
         let up = self.rng.chance(0.04 * self.floor as f32);
         Card { id, up }
     }
@@ -207,7 +226,11 @@ fn gen_map(rng: &mut Rng) -> Vec<Vec<RoomKind>> {
                 let mut rooms: Vec<RoomKind> = Vec::new();
                 // Guarantee a fight on most floors so the deck can grow.
                 if floor != 4 || rng.chance(0.5) {
-                    rooms.push(if floor >= 3 && rng.chance(0.3) { Elite } else { Combat });
+                    rooms.push(if floor >= 3 && rng.chance(0.3) {
+                        Elite
+                    } else {
+                        Combat
+                    });
                 }
                 while rooms.len() < n {
                     let r = roll_room(floor, rng);
@@ -226,7 +249,14 @@ fn gen_map(rng: &mut Rng) -> Vec<Vec<RoomKind>> {
 
 fn roll_room(floor: usize, rng: &mut Rng) -> RoomKind {
     use RoomKind::*;
-    let table: &[(RoomKind, u32)] = &[(Combat, 30), (Elite, 14), (Shrine, 14), (Treasure, 12), (Merchant, 14), (Event, 18)];
+    let table: &[(RoomKind, u32)] = &[
+        (Combat, 30),
+        (Elite, 14),
+        (Shrine, 14),
+        (Treasure, 12),
+        (Merchant, 14),
+        (Event, 18),
+    ];
     loop {
         let total: u32 = table.iter().map(|t| t.1).sum();
         let mut roll = (rng.next_u64() % total as u64) as u32;

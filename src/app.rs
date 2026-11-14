@@ -1,6 +1,8 @@
 use std::cell::{Cell, RefCell};
 
-use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
+use ratatui::crossterm::event::{
+    Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MouseButton, MouseEvent, MouseEventKind,
+};
 use ratatui::layout::{Position, Rect};
 use ratatui::style::Color;
 
@@ -69,7 +71,12 @@ pub struct Opt {
 
 impl Opt {
     fn new(label: impl Into<String>, act: Act) -> Self {
-        Opt { label: label.into(), enabled: true, card: None, act }
+        Opt {
+            label: label.into(),
+            enabled: true,
+            card: None,
+            act,
+        }
     }
     fn when(mut self, enabled: bool) -> Self {
         self.enabled = enabled;
@@ -209,7 +216,11 @@ impl App {
     }
 
     pub fn pause_items(&self) -> &'static [&'static str] {
-        if self.tutorial.is_some() { &TUTORIAL_PAUSE_ITEMS } else { &PAUSE_ITEMS }
+        if self.tutorial.is_some() {
+            &TUTORIAL_PAUSE_ITEMS
+        } else {
+            &PAUSE_ITEMS
+        }
     }
 
     pub fn hit(&self, r: Rect, h: Hit) {
@@ -250,24 +261,30 @@ impl App {
 
     pub fn update(&mut self, dt: f32) {
         self.fx.update(dt);
-        let in_run = !matches!(self.screen, Screen::Title | Screen::End(_) | Screen::ClassSelect);
-        if in_run && self.overlay == Overlay::None {
-            if let Some(r) = self.run.as_mut() {
-                r.elapsed += dt as f64;
-            }
+        let in_run = !matches!(
+            self.screen,
+            Screen::Title | Screen::End(_) | Screen::ClassSelect
+        );
+        if in_run
+            && self.overlay == Overlay::None
+            && let Some(r) = self.run.as_mut()
+        {
+            r.elapsed += dt as f64;
         }
         if self.overlay != Overlay::None {
             return;
         }
-        let Screen::Combat(cv) = &mut self.screen else { return };
+        let Screen::Combat(cv) = &mut self.screen else {
+            return;
+        };
         let class = cv.c.class;
         for ev in cv.c.events.drain(..) {
-            if let crate::combat::Ev::Banner(s) = &ev {
-                if s.contains("MORVATH") {
-                    self.fx.banner(s.clone(), theme::BLOOD_LIGHT);
-                    self.fx.shake = self.fx.t;
-                    continue;
-                }
+            if let crate::combat::Ev::Banner(s) = &ev
+                && s.contains("MORVATH")
+            {
+                self.fx.banner(s.clone(), theme::BLOOD_LIGHT);
+                self.fx.shake = self.fx.t;
+                continue;
             }
             self.fx.ingest(ev, class);
         }
@@ -276,10 +293,10 @@ impl App {
         {
             cv.msg = None;
         }
-        if cv.target >= cv.c.enemies.len() || cv.c.enemies[cv.target].dead {
-            if let Some(t) = cv.c.first_alive() {
-                cv.target = t;
-            }
+        if (cv.target >= cv.c.enemies.len() || cv.c.enemies[cv.target].dead)
+            && let Some(t) = cv.c.first_alive()
+        {
+            cv.target = t;
         }
         cv.timer -= dt;
         match cv.phase {
@@ -306,7 +323,11 @@ impl App {
                 } else {
                     cv.c.start_player_turn();
                     cv.turn_t0 = self.fx.t;
-                    cv.phase = if cv.c.lost() { Phase::Lost } else { Phase::Player };
+                    cv.phase = if cv.c.lost() {
+                        Phase::Lost
+                    } else {
+                        Phase::Player
+                    };
                     cv.timer = 1.8;
                     self.sel = 0;
                     if let Some(tu) = &mut self.tutorial
@@ -330,16 +351,16 @@ impl App {
                 if cv.timer <= 0.0 {
                     if self.tutorial.is_some() {
                         self.leave_tutorial();
-                        self.fx.toast("Even the best pilgrims stumble. Try again from the title.");
+                        self.fx
+                            .toast("Even the best pilgrims stumble. Try again from the title.");
                         return;
                     }
-                    let cause = cv
-                        .c
-                        .enemies
-                        .iter()
-                        .find(|e| !e.dead)
-                        .map(|e| format!("Slain by {}", e.kind.name()))
-                        .unwrap_or_else(|| "Bled dry".into());
+                    let cause =
+                        cv.c.enemies
+                            .iter()
+                            .find(|e| !e.dead)
+                            .map(|e| format!("Slain by {}", e.kind.name()))
+                            .unwrap_or_else(|| "Bled dry".into());
                     self.game_over(false, cause);
                 }
             }
@@ -387,13 +408,23 @@ impl App {
 
     fn hit_at(&self, x: u16, y: u16) -> Option<Hit> {
         let p = Position { x, y };
-        let list = if self.overlay != Overlay::None { &self.ohits } else { &self.hits };
-        list.borrow().iter().rev().find(|(r, _)| r.contains(p)).map(|(_, h)| *h)
+        let list = if self.overlay != Overlay::None {
+            &self.ohits
+        } else {
+            &self.hits
+        };
+        list.borrow()
+            .iter()
+            .rev()
+            .find(|(r, _)| r.contains(p))
+            .map(|(_, h)| *h)
     }
 
     fn map_mouse(&mut self, m: MouseEvent) -> Option<Input> {
         match m.kind {
-            MouseEventKind::Down(MouseButton::Left) => self.hit_at(m.column, m.row).map(Input::Click),
+            MouseEventKind::Down(MouseButton::Left) => {
+                self.hit_at(m.column, m.row).map(Input::Click)
+            }
             MouseEventKind::Down(MouseButton::Right) => Some(Input::Back),
             MouseEventKind::Moved => self.hit_at(m.column, m.row).map(Input::Hover),
             MouseEventKind::ScrollUp => Some(Input::ScrollUp),
@@ -446,7 +477,11 @@ impl App {
         if n == 0 {
             return None;
         }
-        let (prev, next) = if horizontal { (Input::Left, Input::Right) } else { (Input::Up, Input::Down) };
+        let (prev, next) = if horizontal {
+            (Input::Left, Input::Right)
+        } else {
+            (Input::Up, Input::Down)
+        };
         match i {
             x if x == prev => *sel = (*sel + n - 1) % n,
             x if x == next => *sel = (*sel + 1) % n,
@@ -473,7 +508,9 @@ impl App {
                     return;
                 }
                 let n = self.pause_items().len();
-                let Some(k) = Self::nav(&mut self.osel, n, i, false) else { return };
+                let Some(k) = Self::nav(&mut self.osel, n, i, false) else {
+                    return;
+                };
                 match k {
                     0 => self.overlay = Overlay::None,
                     1 => self.open_overlay(Overlay::Help),
@@ -500,7 +537,11 @@ impl App {
             Overlay::Deck | Overlay::Help => match i {
                 Input::Up | Input::ScrollUp => self.scroll = self.scroll.saturating_sub(1),
                 Input::Down | Input::ScrollDown => self.scroll += 1,
-                Input::Back | Input::Confirm | Input::Char('d') | Input::Char('?') | Input::Char('q') => {
+                Input::Back
+                | Input::Confirm
+                | Input::Char('d')
+                | Input::Char('?')
+                | Input::Char('q') => {
                     self.overlay = Overlay::None;
                 }
                 Input::Click(_) => self.overlay = Overlay::None,
@@ -576,12 +617,16 @@ impl App {
                 _ => {}
             }
         }
-        let Screen::Combat(cv) = &mut self.screen else { return };
+        let Screen::Combat(cv) = &mut self.screen else {
+            return;
+        };
         if cv.phase != Phase::Player {
             return;
         }
         let n = cv.c.hand.len();
-        let alive: Vec<usize> = (0..cv.c.enemies.len()).filter(|&e| !cv.c.enemies[e].dead).collect();
+        let alive: Vec<usize> = (0..cv.c.enemies.len())
+            .filter(|&e| !cv.c.enemies[e].dead)
+            .collect();
         let cycle_target = |cv: &mut CombatView, dir: i32| {
             if alive.is_empty() {
                 return;
@@ -604,7 +649,10 @@ impl App {
             Input::Char('e') | Input::Click(Hit::EndTurn) => {
                 if let Some(tu) = &mut self.tutorial {
                     if !tu.allows_end_turn() {
-                        cv.msg = Some(("Not yet — follow the guide above your hand.".into(), self.fx.t));
+                        cv.msg = Some((
+                            "Not yet — follow the guide above your hand.".into(),
+                            self.fx.t,
+                        ));
                         return;
                     }
                     if tu.goal() == Goal::EndTurn {
@@ -627,10 +675,8 @@ impl App {
                 play = Some(k);
             }
             Input::Hover(Hit::Enemy(_)) => {}
-            Input::Click(Hit::Enemy(e)) => {
-                if !cv.c.enemies[e].dead {
-                    cv.target = e;
-                }
+            Input::Click(Hit::Enemy(e)) if !cv.c.enemies[e].dead => {
+                cv.target = e;
             }
             _ => {}
         }
@@ -668,7 +714,9 @@ impl App {
     }
 
     fn input_reward(&mut self, i: Input) {
-        let Screen::Reward(rv) = &self.screen else { return };
+        let Screen::Reward(rv) = &self.screen else {
+            return;
+        };
         let n = rv.cards.len() + 1;
         let cards = rv.cards.clone();
         let i = match i {
@@ -688,10 +736,14 @@ impl App {
     }
 
     fn input_choice(&mut self, i: Input) {
-        let Screen::Choice(cv) = &self.screen else { return };
+        let Screen::Choice(cv) = &self.screen else {
+            return;
+        };
         let n = cv.opts.len();
         if let Some(k) = Self::nav(&mut self.sel, n, i, false) {
-            let Screen::Choice(cv) = &self.screen else { return };
+            let Screen::Choice(cv) = &self.screen else {
+                return;
+            };
             let opt = cv.opts[k].clone();
             if opt.enabled {
                 self.choice_act(opt.act);
@@ -700,9 +752,13 @@ impl App {
     }
 
     fn input_deckpick(&mut self, i: Input) {
-        let Screen::DeckPick(dp) = &self.screen else { return };
+        let Screen::DeckPick(dp) = &self.screen else {
+            return;
+        };
         if i == Input::Back {
-            let Screen::DeckPick(dp) = std::mem::replace(&mut self.screen, Screen::Title) else { return };
+            let Screen::DeckPick(dp) = std::mem::replace(&mut self.screen, Screen::Title) else {
+                return;
+            };
             self.set_screen(Screen::Choice(*dp.back));
             return;
         }
@@ -725,7 +781,9 @@ impl App {
         }
         let Some(k) = act else { return };
         let idx = elig[k];
-        let Screen::DeckPick(dp) = std::mem::replace(&mut self.screen, Screen::Title) else { return };
+        let Screen::DeckPick(dp) = std::mem::replace(&mut self.screen, Screen::Title) else {
+            return;
+        };
         let run = self.run.as_mut().unwrap();
         let name = run.deck[idx].name();
         run.gold -= dp.cost;
@@ -842,7 +900,12 @@ impl App {
         };
         let screen = match room {
             RoomKind::Combat | RoomKind::Elite | RoomKind::Boss => {
-                let kinds = encounter(run.floor, room == RoomKind::Elite, room == RoomKind::Boss, &mut run.rng);
+                let kinds = encounter(
+                    run.floor,
+                    room == RoomKind::Elite,
+                    room == RoomKind::Boss,
+                    &mut run.rng,
+                );
                 let seed = run.rng.next_u64();
                 let mut c = Combat::new(run, &kinds, seed);
                 c.start();
@@ -853,7 +916,15 @@ impl App {
                     _ => "THE DEAD STIR",
                 };
                 self.fx.banner(title, theme::BLOOD_LIGHT);
-                Screen::Combat(Box::new(CombatView { c, target, phase: Phase::Player, timer: 1.0, room, msg: None, turn_t0: t }))
+                Screen::Combat(Box::new(CombatView {
+                    c,
+                    target,
+                    phase: Phase::Player,
+                    timer: 1.0,
+                    room,
+                    msg: None,
+                    turn_t0: t,
+                }))
             }
             RoomKind::Shrine => {
                 let heal = run.max_hp * 3 / 10;
@@ -880,7 +951,10 @@ impl App {
                 text: "A sarcophagus of black marble, its lid carved with a weeping saint. Fresh \
                        scratches mark the stone... from the inside."
                     .into(),
-                opts: vec![Opt::new("Pry open the lid", Act::Open), Opt::new("Leave it be", Act::Continue)],
+                opts: vec![
+                    Opt::new("Pry open the lid", Act::Open),
+                    Opt::new("Leave it be", Act::Continue),
+                ],
                 shop: None,
                 t0: t,
             }),
@@ -895,8 +969,15 @@ impl App {
                     })
                     .collect();
                 items.sort_by_key(|i| i.1);
-                let relic = run.random_relic().map(|r| (r, 110 + run.rng.range(0, 25), false));
-                let shop = Shop { cards: items, relic, purge_cost: 60, purged: false };
+                let relic = run
+                    .random_relic()
+                    .map(|r| (r, 110 + run.rng.range(0, 25), false));
+                let shop = Shop {
+                    cards: items,
+                    relic,
+                    purge_cost: 60,
+                    purged: false,
+                };
                 let opts = shop_opts(&shop, run);
                 Screen::Choice(ChoiceView {
                     title: "The Hollow Merchant".into(),
@@ -916,7 +997,9 @@ impl App {
     }
 
     fn finish_combat(&mut self) {
-        let Screen::Combat(cv) = std::mem::replace(&mut self.screen, Screen::Title) else { return };
+        let Screen::Combat(cv) = std::mem::replace(&mut self.screen, Screen::Title) else {
+            return;
+        };
         let run = self.run.as_mut().unwrap();
         run.hp = cv.c.p.hp.max(1);
         run.kills += cv.c.kills;
@@ -931,7 +1014,11 @@ impl App {
             healed = run.hp - before;
         }
         let elite = cv.room == RoomKind::Elite;
-        let mut gold = if elite { run.rng.range(28, 40) } else { run.rng.range(12, 22) };
+        let mut gold = if elite {
+            run.rng.range(28, 40)
+        } else {
+            run.rng.range(12, 22)
+        };
         if run.relics.contains(&Relic::OssuaryKey) {
             gold = gold * 3 / 2;
         }
@@ -943,7 +1030,12 @@ impl App {
         let cards = run.reward_cards(3, if elite { 0.1 } else { 0.0 });
         self.advance();
         self.fx.clear_combat();
-        self.set_screen(Screen::Reward(RewardView { gold, cards, relic, healed }));
+        self.set_screen(Screen::Reward(RewardView {
+            gold,
+            cards,
+            relic,
+            healed,
+        }));
     }
 
     fn game_over(&mut self, victory: bool, cause: String) {
@@ -1002,32 +1094,48 @@ impl App {
                 match relic {
                     Some(r) => {
                         run.add_relic(r);
-                        text.push_str(&format!("Amid the bones you find {gold} gold and the {}: {}", r.name(), r.desc()));
+                        text.push_str(&format!(
+                            "Amid the bones you find {gold} gold and the {}: {}",
+                            r.name(),
+                            r.desc()
+                        ));
                     }
                     None => text.push_str(&format!("Amid the bones you find {gold} gold.")),
                 }
                 self.resolve_choice(text);
             }
             Act::BuyCard(k) => {
-                let Screen::Choice(cv) = &mut self.screen else { return };
+                let Screen::Choice(cv) = &mut self.screen else {
+                    return;
+                };
                 let shop = cv.shop.as_mut().unwrap();
                 let (card, price, _) = shop.cards[k];
                 run.gold -= price;
                 run.deck.push(card);
                 shop.cards[k].2 = true;
                 cv.opts = shop_opts(shop, run);
-                cv.text = format!("\"{} — a fine choice. It will serve you... for a while.\"", card.name());
+                cv.text = format!(
+                    "\"{} — a fine choice. It will serve you... for a while.\"",
+                    card.name()
+                );
                 cv.t0 = self.fx.t;
             }
             Act::BuyRelic => {
-                let Screen::Choice(cv) = &mut self.screen else { return };
+                let Screen::Choice(cv) = &mut self.screen else {
+                    return;
+                };
                 let shop = cv.shop.as_mut().unwrap();
-                let Some((relic, price, _)) = shop.relic else { return };
+                let Some((relic, price, _)) = shop.relic else {
+                    return;
+                };
                 run.gold -= price;
                 run.add_relic(relic);
                 shop.relic = Some((relic, price, true));
                 cv.opts = shop_opts(shop, run);
-                cv.text = format!("\"The {}. Its last owner won't be needing it.\"", relic.name());
+                cv.text = format!(
+                    "\"The {}. Its last owner won't be needing it.\"",
+                    relic.name()
+                );
                 cv.t0 = self.fx.t;
             }
             Act::Purge => {
@@ -1042,8 +1150,15 @@ impl App {
     }
 
     fn start_pick(&mut self, purpose: Purpose, advance_on_done: bool, cost: i32) {
-        let Screen::Choice(cv) = std::mem::replace(&mut self.screen, Screen::Title) else { return };
-        let dp = DeckPick { purpose, back: Box::new(cv), advance_on_done, cost };
+        let Screen::Choice(cv) = std::mem::replace(&mut self.screen, Screen::Title) else {
+            return;
+        };
+        let dp = DeckPick {
+            purpose,
+            back: Box::new(cv),
+            advance_on_done,
+            cost,
+        };
         if dp.eligible(&self.run.as_ref().unwrap().deck).is_empty() {
             self.fx.toast("You have no cards that can be chosen.");
             self.set_screen(Screen::Choice(*dp.back));
@@ -1072,7 +1187,10 @@ impl App {
             }
             (1, 0) => {
                 let pool = crate::cards::class_pool(run.class);
-                let rares: Vec<CardId> = pool.into_iter().filter(|&c| Card::new(c).def().rarity == Rarity::Rare).collect();
+                let rares: Vec<CardId> = pool
+                    .into_iter()
+                    .filter(|&c| Card::new(c).def().rarity == Rarity::Rare)
+                    .collect();
                 let card = Card::new(*run.rng.pick(&rares));
                 run.deck.push(card);
                 run.deck.push(Card::new(CardId::Wound));
@@ -1088,11 +1206,14 @@ impl App {
             }
             (2, 0) => {
                 run.heal(20);
-                "The water is cold as a grave and tastes of iron. Your wounds knit closed. (+20 HP)".into()
+                "The water is cold as a grave and tastes of iron. Your wounds knit closed. (+20 HP)"
+                    .into()
             }
             (2, 1) => {
                 run.hp = (run.hp - 6).max(1);
-                let mut idx: Vec<usize> = (0..run.deck.len()).filter(|&i| run.deck[i].upgradable()).collect();
+                let mut idx: Vec<usize> = (0..run.deck.len())
+                    .filter(|&i| run.deck[i].upgradable())
+                    .collect();
                 run.rng.shuffle(&mut idx);
                 let names: Vec<String> = idx
                     .iter()
@@ -1103,9 +1224,13 @@ impl App {
                     })
                     .collect();
                 if names.is_empty() {
-                    "The black water burns your skin, but nothing within you changes. (-6 HP)".into()
+                    "The black water burns your skin, but nothing within you changes. (-6 HP)"
+                        .into()
                 } else {
-                    format!("The black water burns like acid. You emerge changed. (-6 HP, upgraded: {})", names.join(", "))
+                    format!(
+                        "The black water burns like acid. You emerge changed. (-6 HP, upgraded: {})",
+                        names.join(", ")
+                    )
                 }
             }
             (3, 0) => {
@@ -1139,7 +1264,11 @@ impl App {
 fn shop_opts(shop: &Shop, run: &RunState) -> Vec<Opt> {
     let mut opts = Vec::new();
     for (k, (card, price, sold)) in shop.cards.iter().enumerate() {
-        let label = if *sold { format!("{} — SOLD", card.name()) } else { format!("{} — {price}g", card.name()) };
+        let label = if *sold {
+            format!("{} — SOLD", card.name())
+        } else {
+            format!("{} — {price}g", card.name())
+        };
         let mut o = Opt::new(label, Act::BuyCard(k)).when(!sold && run.gold >= *price);
         o.card = Some(*card);
         opts.push(o);
@@ -1157,78 +1286,96 @@ fn shop_opts(shop: &Shop, run: &RunState) -> Vec<Opt> {
     } else {
         format!("Purge a card from your deck — {}g", shop.purge_cost)
     };
-    opts.push(Opt::new(label, Act::Purge).when(!shop.purged && run.gold >= shop.purge_cost && run.deck.len() > 1));
+    opts.push(
+        Opt::new(label, Act::Purge)
+            .when(!shop.purged && run.gold >= shop.purge_cost && run.deck.len() > 1),
+    );
     opts.push(Opt::new("Leave", Act::Continue));
     opts
 }
 
 fn event_view(id: u8, run: &RunState, t: f32) -> ChoiceView {
     let e = |o: u8| Act::Event(id, o);
-    let (title, art, color, text, opts): (&str, &'static [&'static str], Color, &str, Vec<Opt>) = match id {
-        0 => (
-            "The Bleeding Altar",
-            art::ALTAR,
-            theme::BLOOD_LIGHT,
-            "An altar of fused vertebrae weeps a slow red tide. Carved above it: \
+    let (title, art, color, text, opts): (&str, &'static [&'static str], Color, &str, Vec<Opt>) =
+        match id {
+            0 => (
+                "The Bleeding Altar",
+                art::ALTAR,
+                theme::BLOOD_LIGHT,
+                "An altar of fused vertebrae weeps a slow red tide. Carved above it: \
              GIVE AND BE GIVEN. The candles lean toward you as if hungry.",
-            vec![
-                Opt::new("Offer your blood — lose 8 HP, gain a relic", e(0)).when(run.hp > 8),
-                Opt::new("Walk away", e(9)),
-            ],
-        ),
-        1 => (
-            "The Whispering Skull",
-            art::SKULL,
-            theme::BONE,
-            "A skull rests in a niche of the wall, jaw moving soundlessly. As you near, the \
+                vec![
+                    Opt::new("Offer your blood — lose 8 HP, gain a relic", e(0)).when(run.hp > 8),
+                    Opt::new("Walk away", e(9)),
+                ],
+            ),
+            1 => (
+                "The Whispering Skull",
+                art::SKULL,
+                theme::BONE,
+                "A skull rests in a niche of the wall, jaw moving soundlessly. As you near, the \
              whispers become words: secrets of murder, of craft, of the things below.",
-            vec![
-                Opt::new("Listen — gain a Rare card, add a Wound to your deck", e(0)),
-                Opt::new("Crush it — gain 25 gold", e(1)),
-            ],
-        ),
-        2 => (
-            "The Pool of Black Water",
-            art::POOL,
-            theme::STEEL,
-            "A still pool, black as ink, fills a collapsed ossuary. Your reflection does not \
+                vec![
+                    Opt::new("Listen — gain a Rare card, add a Wound to your deck", e(0)),
+                    Opt::new("Crush it — gain 25 gold", e(1)),
+                ],
+            ),
+            2 => (
+                "The Pool of Black Water",
+                art::POOL,
+                theme::STEEL,
+                "A still pool, black as ink, fills a collapsed ossuary. Your reflection does not \
              quite move when you do.",
-            vec![
-                Opt::new("Drink — heal 20 HP", e(0)),
-                Opt::new("Bathe — upgrade 2 random cards, lose 6 HP", e(1)),
-                Opt::new("Leave it undisturbed", e(9)),
-            ],
-        ),
-        3 => (
-            "The Hanged Pilgrim",
-            art::GALLOWS,
-            theme::ASH,
-            "A pilgrim dangles from a rusted gibbet, a heavy purse still on his belt. His eyes are \
+                vec![
+                    Opt::new("Drink — heal 20 HP", e(0)),
+                    Opt::new("Bathe — upgrade 2 random cards, lose 6 HP", e(1)),
+                    Opt::new("Leave it undisturbed", e(9)),
+                ],
+            ),
+            3 => (
+                "The Hanged Pilgrim",
+                art::GALLOWS,
+                theme::ASH,
+                "A pilgrim dangles from a rusted gibbet, a heavy purse still on his belt. His eyes are \
              closed. You are almost certain his eyes were open a moment ago.",
-            vec![
-                Opt::new("Search the corpse — gain 45 gold, lose 5 HP", e(0)),
-                Opt::new("Give him the last rites — gain 5 Max HP", e(1)),
-                Opt::new("Leave him to the crows", e(9)),
-            ],
-        ),
-        _ => {
-            let wounds = run.deck.iter().filter(|c| c.id == CardId::Wound).count();
-            let mut opts = vec![Opt::new("Pay 35 gold — bury a card of your choice", e(0)).when(run.gold >= 35 && run.deck.len() > 1)];
-            if wounds > 0 {
-                opts.push(Opt::new(format!("Bury your Wounds — remove {wounds} Wound(s)"), e(1)));
-            }
-            opts.push(Opt::new("Leave", e(9)));
-            (
-                "The Gravedigger",
-                art::GRAVE,
-                theme::EMBER,
-                "A hunched gravedigger leans on his spade beside a fresh, empty grave. \"Every pilgrim \
+                vec![
+                    Opt::new("Search the corpse — gain 45 gold, lose 5 HP", e(0)),
+                    Opt::new("Give him the last rites — gain 5 Max HP", e(1)),
+                    Opt::new("Leave him to the crows", e(9)),
+                ],
+            ),
+            _ => {
+                let wounds = run.deck.iter().filter(|c| c.id == CardId::Wound).count();
+                let mut opts = vec![
+                    Opt::new("Pay 35 gold — bury a card of your choice", e(0))
+                        .when(run.gold >= 35 && run.deck.len() > 1),
+                ];
+                if wounds > 0 {
+                    opts.push(Opt::new(
+                        format!("Bury your Wounds — remove {wounds} Wound(s)"),
+                        e(1),
+                    ));
+                }
+                opts.push(Opt::new("Leave", e(9)));
+                (
+                    "The Gravedigger",
+                    art::GRAVE,
+                    theme::EMBER,
+                    "A hunched gravedigger leans on his spade beside a fresh, empty grave. \"Every pilgrim \
                  carries something they'd rather bury,\" he rasps. \"For a price.\"",
-                opts,
-            )
-        }
-    };
-    ChoiceView { title: title.into(), art, art_color: color, text: text.into(), opts, shop: None, t0: t }
+                    opts,
+                )
+            }
+        };
+    ChoiceView {
+        title: title.into(),
+        art,
+        art_color: color,
+        text: text.into(),
+        opts,
+        shop: None,
+        t0: t,
+    }
 }
 
 pub fn fmt_time(secs: f64) -> String {

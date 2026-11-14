@@ -112,12 +112,19 @@ pub fn spawn(kind: EnemyKind, floor: usize, rng: &mut Rng) -> Enemy {
         hp = (hp as f32 * (1.0 + 0.05 * floor as f32)) as i32;
     }
     let step = match kind {
-        EnemyKind::Ghoul | EnemyKind::Skeleton | EnemyKind::BoneArcher | EnemyKind::Wraith => rng.below(3),
+        EnemyKind::Ghoul | EnemyKind::Skeleton | EnemyKind::BoneArcher | EnemyKind::Wraith => {
+            rng.below(3)
+        }
         _ => 0,
     };
     let mut e = Enemy {
         kind,
-        f: Fighter { hp, max_hp: hp, block: 0, st: Default::default() },
+        f: Fighter {
+            hp,
+            max_hp: hp,
+            block: 0,
+            st: Default::default(),
+        },
         intent: Intent::Attack(0),
         step,
         phase: 0,
@@ -142,13 +149,25 @@ pub fn pick_intent(e: &mut Enemy, floor: usize, rng: &mut Rng) {
             _ => AttackDebuff(5 + fb, St::Weak, 1),
         },
         EnemyKind::Skeleton => {
-            if s % 2 == 0 { AttackDefend(5 + fb, 6) } else { Attack(9 + fb) }
+            if s.is_multiple_of(2) {
+                AttackDefend(5 + fb, 6)
+            } else {
+                Attack(9 + fb)
+            }
         }
         EnemyKind::PlagueRat => {
-            if rng.chance(0.5) { Attack(3 + fb) } else { AttackDebuff(2 + fb, St::Poison, 2) }
+            if rng.chance(0.5) {
+                Attack(3 + fb)
+            } else {
+                AttackDebuff(2 + fb, St::Poison, 2)
+            }
         }
         EnemyKind::Cultist => {
-            if s == 0 { Buff(3) } else { Attack(6 + fb) }
+            if s == 0 {
+                Buff(3)
+            } else {
+                Attack(6 + fb)
+            }
         }
         EnemyKind::BoneArcher => match s % 3 {
             0 => Multi(3 + fb / 2, 3),
@@ -206,7 +225,12 @@ pub fn encounter(floor: usize, elite: bool, boss: bool, rng: &mut Rng) -> Vec<En
         return rng.pick(&opts).to_vec();
     }
     if floor < 3 {
-        let opts: [&[EnemyKind]; 4] = [&[Ghoul], &[Skeleton, PlagueRat], &[PlagueRat, PlagueRat, PlagueRat], &[Cultist]];
+        let opts: [&[EnemyKind]; 4] = [
+            &[Ghoul],
+            &[Skeleton, PlagueRat],
+            &[PlagueRat, PlagueRat, PlagueRat],
+            &[Cultist],
+        ];
         rng.pick(&opts).to_vec()
     } else {
         let opts: [&[EnemyKind]; 5] = [

@@ -128,8 +128,12 @@ impl Tutorial {
         let d = card.def();
         match self.goal() {
             Goal::Read => Some("Press Enter to continue."),
-            Goal::PlayAttack if d.kind != Kind::Attack => Some("Play an Attack first — try Cleave."),
-            Goal::GainBlock if !d.effs.iter().any(|e| matches!(e, Eff::Block(_))) => Some("Play a Block card — try Iron Guard."),
+            Goal::PlayAttack if d.kind != Kind::Attack => {
+                Some("Play an Attack first — try Cleave.")
+            }
+            Goal::GainBlock if !d.effs.iter().any(|e| matches!(e, Eff::Block(_))) => {
+                Some("Play a Block card — try Iron Guard.")
+            }
             Goal::Play(id) if card.id != id => Some("Play Blood Offering."),
             Goal::Watch | Goal::Done => Some(""),
             _ => None,
@@ -165,7 +169,16 @@ pub fn combat(run: &RunState) -> Combat {
     use CardId::*;
     let mut c = Combat::new(run, &[EnemyKind::Ghoul], 7);
     // Cards are drawn from the end of the pile, so the opening hand is listed last, reversed.
-    let order = [IronGuard, Cleave, CrimsonArc, BloodOffering, IronGuard, Cleave, IronGuard, Cleave];
+    let order = [
+        IronGuard,
+        Cleave,
+        CrimsonArc,
+        BloodOffering,
+        IronGuard,
+        Cleave,
+        IronGuard,
+        Cleave,
+    ];
     c.draw = order.iter().map(|&id| Card::new(id)).collect();
     let g = &mut c.enemies[0];
     g.f.hp = 22;

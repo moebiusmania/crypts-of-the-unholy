@@ -163,7 +163,10 @@ impl CardDef {
     }
 
     pub fn self_damage(&self) -> i32 {
-        self.effs.iter().map(|e| if let Eff::LoseHp(n) = e { *n } else { 0 }).sum()
+        self.effs
+            .iter()
+            .map(|e| if let Eff::LoseHp(n) = e { *n } else { 0 })
+            .sum()
     }
 
     /// Card text. `strength`/`weak` adjust displayed attack numbers in combat.
@@ -189,7 +192,9 @@ impl CardDef {
                 Eff::Gain(s, n) => match s {
                     St::Plating => format!("At the end of each turn, gain {n} Block."),
                     St::VenomBlades => format!("Your attack hits apply {n} Poison."),
-                    St::DoomAura => format!("At the start of each turn, apply {n} Doom to ALL enemies."),
+                    St::DoomAura => {
+                        format!("At the start of each turn, apply {n} Doom to ALL enemies.")
+                    }
                     _ => format!("Gain {n} {}.", s.name()),
                 },
                 Eff::ComboDmg(n) => format!("Combo: deal {} more.", atk(n)),
@@ -198,7 +203,9 @@ impl CardDef {
                 Eff::DmgFromBlock => "Deal damage equal to your Block.".into(),
                 Eff::DmgFromDoom => "Deal damage equal to the target's Doom.".into(),
                 Eff::DoublePoison => "Double the target's Poison.".into(),
-                Eff::Execute(n) => format!("Deal {} damage. Double vs. foes below half HP.", atk(n)),
+                Eff::Execute(n) => {
+                    format!("Deal {} damage. Double vs. foes below half HP.", atk(n))
+                }
                 Eff::Drain(n) => format!("Deal {} damage. Heal unblocked damage.", atk(n)),
             });
         }
@@ -227,7 +234,11 @@ impl Card {
     }
     pub fn name(&self) -> String {
         let d = self.def();
-        if self.up { format!("{}+", d.name) } else { d.name.to_string() }
+        if self.up {
+            format!("{}+", d.name)
+        } else {
+            d.name.to_string()
+        }
     }
     pub fn upgradable(&self) -> bool {
         !self.up && self.def().kind != Kind::Curse
@@ -240,7 +251,14 @@ pub fn def(id: CardId, up: bool) -> CardDef {
     use Kind::*;
     use Rarity::*;
     let u = |a: i32, b: i32| if up { b } else { a };
-    let c = |name, cost, kind, rarity, effs: Vec<Eff>| CardDef { name, cost, kind, rarity, effs, exhaust: false };
+    let c = |name, cost, kind, rarity, effs: Vec<Eff>| CardDef {
+        name,
+        cost,
+        kind,
+        rarity,
+        effs,
+        exhaust: false,
+    };
     let x = |mut d: CardDef| {
         d.exhaust = true;
         d
@@ -253,48 +271,196 @@ pub fn def(id: CardId, up: bool) -> CardDef {
             0,
             Skill,
             Starter,
-            if up { vec![LoseHp(3), Energy(2), Draw(1)] } else { vec![LoseHp(3), Energy(2)] },
+            if up {
+                vec![LoseHp(3), Energy(2), Draw(1)]
+            } else {
+                vec![LoseHp(3), Energy(2)]
+            },
         ),
-        CrimsonArc => c("Crimson Arc", 2, Attack, Starter, vec![LoseHp(2), DmgAll(u(10, 14))]),
-        ExecutionersSwing => c("Executioner's Swing", 2, Attack, Uncommon, vec![Execute(u(14, 18))]),
-        SanguineStrike => c("Sanguine Strike", 1, Attack, Common, vec![Dmg(u(8, 11)), Heal(u(3, 4))]),
+        CrimsonArc => c(
+            "Crimson Arc",
+            2,
+            Attack,
+            Starter,
+            vec![LoseHp(2), DmgAll(u(10, 14))],
+        ),
+        ExecutionersSwing => c(
+            "Executioner's Swing",
+            2,
+            Attack,
+            Uncommon,
+            vec![Execute(u(14, 18))],
+        ),
+        SanguineStrike => c(
+            "Sanguine Strike",
+            1,
+            Attack,
+            Common,
+            vec![Dmg(u(8, 11)), Heal(u(3, 4))],
+        ),
         BulwarkOfBone => c("Bulwark of Bone", 2, Skill, Common, vec![Block(u(14, 19))]),
         ShieldBash => c("Shield Bash", u(1, 0), Attack, Common, vec![DmgFromBlock]),
-        Wrath => c("Wrath", 1, Power, Uncommon, vec![LoseHp(3), Gain(St::Strength, u(2, 3))]),
-        Hemorrhage => c("Hemorrhage", 1, Attack, Common, vec![Dmg(u(6, 8)), Apply(St::Vulnerable, u(2, 3))]),
-        Unbreakable => c("Unbreakable", 1, Power, Uncommon, vec![Gain(St::Plating, u(4, 6))]),
-        RecklessFury => c("Reckless Fury", 0, Attack, Common, vec![LoseHp(2), Multi(u(4, 6), 2)]),
-        Martyrdom => c("Martyrdom", 2, Attack, Rare, vec![LoseHp(6), Dmg(u(28, 36))]),
-        ThornedMail => c("Thorned Mail", 1, Power, Rare, vec![Gain(St::Thorns, u(3, 5)), Block(u(5, 8))]),
+        Wrath => c(
+            "Wrath",
+            1,
+            Power,
+            Uncommon,
+            vec![LoseHp(3), Gain(St::Strength, u(2, 3))],
+        ),
+        Hemorrhage => c(
+            "Hemorrhage",
+            1,
+            Attack,
+            Common,
+            vec![Dmg(u(6, 8)), Apply(St::Vulnerable, u(2, 3))],
+        ),
+        Unbreakable => c(
+            "Unbreakable",
+            1,
+            Power,
+            Uncommon,
+            vec![Gain(St::Plating, u(4, 6))],
+        ),
+        RecklessFury => c(
+            "Reckless Fury",
+            0,
+            Attack,
+            Common,
+            vec![LoseHp(2), Multi(u(4, 6), 2)],
+        ),
+        Martyrdom => c(
+            "Martyrdom",
+            2,
+            Attack,
+            Rare,
+            vec![LoseHp(6), Dmg(u(28, 36))],
+        ),
+        ThornedMail => c(
+            "Thorned Mail",
+            1,
+            Power,
+            Rare,
+            vec![Gain(St::Thorns, u(3, 5)), Block(u(5, 8))],
+        ),
 
         Stab => c("Stab", 1, Attack, Starter, vec![Dmg(u(6, 9))]),
         ShadowVeil => c("Shadow Veil", 1, Skill, Starter, vec![Block(u(5, 8))]),
-        Envenom => c("Envenom", 1, Skill, Starter, vec![Apply(St::Poison, u(4, 6))]),
-        QuickSlice => c("Quick Slice", 0, Attack, Starter, vec![Dmg(u(3, 5)), ComboDraw(1)]),
-        TwinFangs => c("Twin Fangs", 1, Attack, Common, vec![Multi(u(4, 5), 2), ComboDmg(u(4, 6))]),
-        DeadlyVenom => c("Deadly Venom", 1, Skill, Common, vec![Apply(St::Poison, u(7, 10))]),
-        ToxicCloud => c("Toxic Cloud", 2, Skill, Uncommon, vec![ApplyAll(St::Poison, u(5, 7))]),
+        Envenom => c(
+            "Envenom",
+            1,
+            Skill,
+            Starter,
+            vec![Apply(St::Poison, u(4, 6))],
+        ),
+        QuickSlice => c(
+            "Quick Slice",
+            0,
+            Attack,
+            Starter,
+            vec![Dmg(u(3, 5)), ComboDraw(1)],
+        ),
+        TwinFangs => c(
+            "Twin Fangs",
+            1,
+            Attack,
+            Common,
+            vec![Multi(u(4, 5), 2), ComboDmg(u(4, 6))],
+        ),
+        DeadlyVenom => c(
+            "Deadly Venom",
+            1,
+            Skill,
+            Common,
+            vec![Apply(St::Poison, u(7, 10))],
+        ),
+        ToxicCloud => c(
+            "Toxic Cloud",
+            2,
+            Skill,
+            Uncommon,
+            vec![ApplyAll(St::Poison, u(5, 7))],
+        ),
         Rupture => x(c("Rupture", u(1, 0), Skill, Uncommon, vec![DoublePoison])),
-        SmokeBomb => c("Smoke Bomb", u(1, 0), Skill, Common, vec![Gain(St::Dodge, 1), Draw(1)]),
+        SmokeBomb => c(
+            "Smoke Bomb",
+            u(1, 0),
+            Skill,
+            Common,
+            vec![Gain(St::Dodge, 1), Draw(1)],
+        ),
         Flurry => c("Flurry", 1, Attack, Common, vec![Multi(u(2, 3), 4)]),
         Backstab => x(c("Backstab", 0, Attack, Uncommon, vec![Dmg(u(11, 15))])),
         Shadowstep => x(c("Shadowstep", 0, Skill, Uncommon, vec![Draw(u(2, 3))])),
-        Assassinate => c("Assassinate", 2, Attack, Rare, vec![Dmg(u(14, 18)), ComboDmg(u(14, 18))]),
-        VenomBlades => c("Venom Blades", 1, Power, Rare, vec![Gain(St::VenomBlades, u(1, 2))]),
+        Assassinate => c(
+            "Assassinate",
+            2,
+            Attack,
+            Rare,
+            vec![Dmg(u(14, 18)), ComboDmg(u(14, 18))],
+        ),
+        VenomBlades => c(
+            "Venom Blades",
+            1,
+            Power,
+            Rare,
+            vec![Gain(St::VenomBlades, u(1, 2))],
+        ),
 
         ShadowBolt => c("Shadow Bolt", 1, Attack, Starter, vec![Dmg(u(7, 10))]),
         DarkWard => c("Dark Ward", 1, Skill, Starter, vec![Block(u(5, 8))]),
-        Hex => c("Hex", 1, Skill, Starter, vec![Apply(St::Weak, u(2, 3)), Apply(St::Doom, u(6, 9))]),
+        Hex => c(
+            "Hex",
+            1,
+            Skill,
+            Starter,
+            vec![Apply(St::Weak, u(2, 3)), Apply(St::Doom, u(6, 9))],
+        ),
         SiphonLife => c("Siphon Life", 1, Attack, Starter, vec![Drain(u(6, 9))]),
-        Doombringer => c("Doombringer", 1, Skill, Common, vec![Apply(St::Doom, u(12, 17))]),
-        RainOfAsh => c("Rain of Ash", 2, Attack, Uncommon, vec![DmgAll(u(8, 11)), ApplyAll(St::Doom, u(4, 6))]),
+        Doombringer => c(
+            "Doombringer",
+            1,
+            Skill,
+            Common,
+            vec![Apply(St::Doom, u(12, 17))],
+        ),
+        RainOfAsh => c(
+            "Rain of Ash",
+            2,
+            Attack,
+            Uncommon,
+            vec![DmgAll(u(8, 11)), ApplyAll(St::Doom, u(4, 6))],
+        ),
         SoulRend => c("Soul Rend", u(2, 1), Attack, Rare, vec![DmgFromDoom]),
-        CurseOfFrailty => c("Curse of Frailty", 0, Skill, Common, vec![Apply(St::Vulnerable, u(2, 3))]),
-        BloodTithe => c("Blood Tithe", 0, Skill, Common, vec![LoseHp(3), Energy(u(1, 2)), Draw(1)]),
+        CurseOfFrailty => c(
+            "Curse of Frailty",
+            0,
+            Skill,
+            Common,
+            vec![Apply(St::Vulnerable, u(2, 3))],
+        ),
+        BloodTithe => c(
+            "Blood Tithe",
+            0,
+            Skill,
+            Common,
+            vec![LoseHp(3), Energy(u(1, 2)), Draw(1)],
+        ),
         EldritchBlast => c("Eldritch Blast", 2, Attack, Common, vec![Dmg(u(18, 24))]),
-        PactOfShadows => c("Pact of Shadows", 1, Power, Uncommon, vec![Gain(St::DoomAura, u(3, 5))]),
+        PactOfShadows => c(
+            "Pact of Shadows",
+            1,
+            Power,
+            Uncommon,
+            vec![Gain(St::DoomAura, u(3, 5))],
+        ),
         DrainEssence => c("Drain Essence", 2, Attack, Uncommon, vec![Drain(u(11, 15))]),
-        VoidShield => c("Void Shield", 1, Skill, Common, vec![Block(u(8, 11)), ApplyAll(St::Weak, 1)]),
+        VoidShield => c(
+            "Void Shield",
+            1,
+            Skill,
+            Common,
+            vec![Block(u(8, 11)), ApplyAll(St::Weak, 1)],
+        ),
         DarkInsight => c("Dark Insight", u(1, 0), Skill, Common, vec![Draw(3)]),
 
         Wound => c("Wound", 0, Kind::Curse, Rarity::Curse, vec![]),
@@ -304,9 +470,22 @@ pub fn def(id: CardId, up: bool) -> CardDef {
 pub fn starter_deck(class: Class) -> Vec<Card> {
     use CardId::*;
     let ids: &[CardId] = match class {
-        Class::BloodKnight => &[Cleave, Cleave, Cleave, IronGuard, IronGuard, IronGuard, BloodOffering, CrimsonArc],
-        Class::Assassin => &[Stab, Stab, Stab, ShadowVeil, ShadowVeil, Envenom, QuickSlice, QuickSlice],
-        Class::Warlock => &[ShadowBolt, ShadowBolt, ShadowBolt, DarkWard, DarkWard, DarkWard, Hex, SiphonLife],
+        Class::BloodKnight => &[
+            Cleave,
+            Cleave,
+            Cleave,
+            IronGuard,
+            IronGuard,
+            IronGuard,
+            BloodOffering,
+            CrimsonArc,
+        ],
+        Class::Assassin => &[
+            Stab, Stab, Stab, ShadowVeil, ShadowVeil, Envenom, QuickSlice, QuickSlice,
+        ],
+        Class::Warlock => &[
+            ShadowBolt, ShadowBolt, ShadowBolt, DarkWard, DarkWard, DarkWard, Hex, SiphonLife,
+        ],
     };
     ids.iter().map(|&id| Card::new(id)).collect()
 }

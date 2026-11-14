@@ -5,6 +5,40 @@ Descend ten floors of a cursed crypt and destroy Morvath, the Unholy Abbot. A ru
 
 ![A Blood Knight fighting a Skeleton and a Plague Rat on Floor 1](assets/screenshot.svg)
 
+## Install
+
+Download the archive for your platform from the **Releases** page:
+
+| Platform | File |
+|---|---|
+| Linux x86_64 | `crypts_of_the_unholy-<version>-linux-x86_64.tar.gz` |
+| Linux ARM64 (Raspberry Pi 4/5, 64-bit OS) | `crypts_of_the_unholy-<version>-linux-aarch64.tar.gz` |
+| macOS (Apple Silicon) | `crypts_of_the_unholy-<version>-macos-aarch64.tar.gz` |
+| Windows x86_64 | `crypts_of_the_unholy-<version>-windows-x86_64.zip` |
+
+**Linux / macOS:** extract it and move the binary onto your `PATH`:
+
+```sh
+tar xzf crypts_of_the_unholy-*.tar.gz
+mkdir -p ~/.local/bin
+mv crypts_of_the_unholy-*/crypts_of_the_unholy ~/.local/bin/
+crypts_of_the_unholy
+```
+
+On macOS the binary is not notarized. If Gatekeeper blocks it, clear the quarantine flag once:
+`xattr -d com.apple.quarantine ~/.local/bin/crypts_of_the_unholy`
+
+**Windows:** extract the zip and run `crypts_of_the_unholy.exe` from Windows Terminal
+(the old console host lacks truecolor).
+
+Each release includes a `SHA256SUMS` file for verifying downloads.
+
+**From source** (Rust 1.88+):
+
+```sh
+cargo install --path .
+```
+
 ## Run
 
 ```sh

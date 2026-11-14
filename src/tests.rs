@@ -14,7 +14,9 @@ fn key(app: &mut App, code: KeyCode) {
 }
 
 fn incoming(app: &App) -> i32 {
-    let Screen::Combat(cv) = &app.screen else { return 0 };
+    let Screen::Combat(cv) = &app.screen else {
+        return 0;
+    };
     let c = &cv.c;
     (0..c.enemies.len())
         .filter(|&i| !c.enemies[i].dead)
@@ -33,7 +35,9 @@ fn incoming(app: &App) -> i32 {
 
 /// Picks a hand index to play, or None to end the turn.
 fn choose_card(app: &App) -> Option<usize> {
-    let Screen::Combat(cv) = &app.screen else { return None };
+    let Screen::Combat(cv) = &app.screen else {
+        return None;
+    };
     let c = &cv.c;
     let need_block = c.p.block < incoming(app);
     let mut best: Option<(i32, usize)> = None;
@@ -53,7 +57,10 @@ fn choose_card(app: &App) -> Option<usize> {
         if d.kind == Kind::Power {
             score += 30;
         }
-        if d.effs.iter().any(|e| matches!(e, Eff::Energy(_) | Eff::Draw(_))) {
+        if d.effs
+            .iter()
+            .any(|e| matches!(e, Eff::Energy(_) | Eff::Draw(_)))
+        {
             score += 40;
         }
         if best.is_none_or(|b| score > b.0) {
@@ -114,7 +121,10 @@ fn play_run(class: usize, seed: u64, w: u16, h: u16) -> Outcome {
                     assert_eq!(app.overlay, Overlay::None);
                 }
                 let k = rng.below(n);
-                key(&mut app, KeyCode::Char(char::from_digit(k as u32 + 1, 10).unwrap()));
+                key(
+                    &mut app,
+                    KeyCode::Char(char::from_digit(k as u32 + 1, 10).unwrap()),
+                );
             }
             Screen::Combat(cv) => {
                 if cv.phase != Phase::Player || cv.timer > 0.8 {
@@ -132,7 +142,11 @@ fn play_run(class: usize, seed: u64, w: u16, h: u16) -> Outcome {
                 }
             }
             Screen::Reward(rv) => {
-                let pick = if rv.cards.is_empty() { 0 } else { rng.below(rv.cards.len() + 1) };
+                let pick = if rv.cards.is_empty() {
+                    0
+                } else {
+                    rng.below(rv.cards.len() + 1)
+                };
                 app.sel = pick;
                 key(&mut app, KeyCode::Enter);
             }
@@ -140,7 +154,8 @@ fn play_run(class: usize, seed: u64, w: u16, h: u16) -> Outcome {
                 if app.screen_age() < 0.2 {
                     continue;
                 }
-                let enabled: Vec<usize> = (0..cv.opts.len()).filter(|&i| cv.opts[i].enabled).collect();
+                let enabled: Vec<usize> =
+                    (0..cv.opts.len()).filter(|&i| cv.opts[i].enabled).collect();
                 let k = *rng.pick(&enabled);
                 app.sel = k;
                 key(&mut app, KeyCode::Enter);
@@ -153,7 +168,12 @@ fn play_run(class: usize, seed: u64, w: u16, h: u16) -> Outcome {
                 }
             }
             Screen::End(es) => {
-                return Outcome { victory: es.victory, floor: floor_reached, secs, turns };
+                return Outcome {
+                    victory: es.victory,
+                    floor: floor_reached,
+                    secs,
+                    turns,
+                };
             }
             Screen::Title | Screen::ClassSelect => panic!("unexpected screen"),
         }
@@ -183,7 +203,9 @@ fn bot_runs_all_classes() {
             floors += o.floor;
             secs += o.secs;
             turns += o.turns;
-            if !o.victory { hist[o.floor + 1] += 1; }
+            if !o.victory {
+                hist[o.floor + 1] += 1;
+            }
         }
         eprintln!(
             "{:<12} wins {wins}/{n}  avg floor {:.1}  avg turns {:.1}  avg sim-time {:.0}s",
@@ -205,7 +227,9 @@ fn save_and_resume_mid_room() {
     key(&mut app, KeyCode::Enter);
     assert!(matches!(app.screen, Screen::Map));
     key(&mut app, KeyCode::Char('1'));
-    let Screen::Combat(cv) = &app.screen else { panic!("floor 1 should be combat") };
+    let Screen::Combat(cv) = &app.screen else {
+        panic!("floor 1 should be combat")
+    };
     let hp: Vec<i32> = cv.c.enemies.iter().map(|e| e.f.hp).collect();
     // Quit via pause menu and resume.
     key(&mut app, KeyCode::Esc);
@@ -219,7 +243,9 @@ fn save_and_resume_mid_room() {
     let mut app = App::new();
     assert_eq!(app.sel, 1);
     key(&mut app, KeyCode::Enter);
-    let Screen::Combat(cv) = &app.screen else { panic!("should resume into the same combat") };
+    let Screen::Combat(cv) = &app.screen else {
+        panic!("should resume into the same combat")
+    };
     let hp2: Vec<i32> = cv.c.enemies.iter().map(|e| e.f.hp).collect();
     assert_eq!(hp, hp2, "resumed room should be identical");
     assert!(cv.c.p.st.get(St::Poison) == 0);
@@ -243,15 +269,21 @@ fn snapshot_screens() {
     isolate_saves();
     let dir = std::env::var("SNAP_DIR").unwrap_or_else(|_| ".".into());
     let (w, h) = (
-        std::env::var("SNAP_W").ok().and_then(|v| v.parse().ok()).unwrap_or(120),
-        std::env::var("SNAP_H").ok().and_then(|v| v.parse().ok()).unwrap_or(40),
+        std::env::var("SNAP_W")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(120),
+        std::env::var("SNAP_H")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(40),
     );
     let mut term = Terminal::new(TestBackend::new(w, h)).unwrap();
     let mut app = App::new();
     let snap = |term: &mut Terminal<TestBackend>, app: &mut App, name: &str| {
         app.update(1.5);
         term.draw(|f| crate::ui::render(app, f)).unwrap();
-        std::fs::write(format!("{dir}/{name}.txt"), dump(&term)).unwrap();
+        std::fs::write(format!("{dir}/{name}.txt"), dump(term)).unwrap();
     };
     snap(&mut term, &mut app, "01_title");
     app.sel = 0;
@@ -273,7 +305,11 @@ fn snapshot_screens() {
     // Jump to a merchant room on the current floor.
     let r = app.run.as_mut().unwrap();
     r.floor = 1;
-    r.map[1] = vec![crate::run::RoomKind::Merchant, crate::run::RoomKind::Event, crate::run::RoomKind::Elite];
+    r.map[1] = vec![
+        crate::run::RoomKind::Merchant,
+        crate::run::RoomKind::Event,
+        crate::run::RoomKind::Elite,
+    ];
     r.gold = 200;
     app.screen = Screen::Map;
     snap(&mut term, &mut app, "07_map2");
@@ -297,18 +333,24 @@ fn tutorial_plays_through() {
     key(&mut app, KeyCode::Enter);
     assert!(app.tutorial.is_some());
     let hand_index = |app: &App, pred: &dyn Fn(crate::cards::Card) -> bool| {
-        let Screen::Combat(cv) = &app.screen else { panic!("tutorial should be in combat") };
+        let Screen::Combat(cv) = &app.screen else {
+            panic!("tutorial should be in combat")
+        };
         (0..cv.c.hand.len()).find(|&i| pred(cv.c.hand[i]) && cv.c.unplayable_reason(i).is_none())
     };
     // Ending the turn early is refused.
     key(&mut app, KeyCode::Char('e'));
-    let Screen::Combat(cv) = &app.screen else { panic!() };
+    let Screen::Combat(cv) = &app.screen else {
+        panic!()
+    };
     assert_eq!(cv.phase, Phase::Player);
     for _ in 0..2_000 {
         app.update(0.05);
         term.draw(|f| crate::ui::render(&app, f)).unwrap();
         let Some(tu) = &app.tutorial else { break };
-        let Screen::Combat(cv) = &app.screen else { panic!() };
+        let Screen::Combat(cv) = &app.screen else {
+            panic!()
+        };
         if cv.phase != Phase::Player && tu.goal() != Goal::Done {
             continue;
         }
@@ -318,8 +360,12 @@ fn tutorial_plays_through() {
                 continue;
             }
             Goal::Watch => continue,
-            Goal::PlayAttack | Goal::EndTurn | Goal::Win => hand_index(&app, &|c| c.def().kind == Kind::Attack),
-            Goal::GainBlock => hand_index(&app, &|c| c.def().effs.iter().any(|e| matches!(e, Eff::Block(_)))),
+            Goal::PlayAttack | Goal::EndTurn | Goal::Win => {
+                hand_index(&app, &|c| c.def().kind == Kind::Attack)
+            }
+            Goal::GainBlock => hand_index(&app, &|c| {
+                c.def().effs.iter().any(|e| matches!(e, Eff::Block(_)))
+            }),
             Goal::Play(id) => hand_index(&app, &|c| c.id == id),
         };
         match pick {

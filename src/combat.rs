@@ -1,5 +1,5 @@
 use crate::cards::{Card, CardId, Eff, Kind};
-use crate::enemies::{pick_intent, spawn, Enemy, EnemyKind, Intent};
+use crate::enemies::{Enemy, EnemyKind, Intent, pick_intent, spawn};
 use crate::model::{Class, Fighter, Relic, St};
 use crate::rng::Rng;
 use crate::run::RunState;
@@ -52,13 +52,21 @@ impl Combat {
     pub fn new(run: &RunState, kinds: &[EnemyKind], seed: u64) -> Self {
         let mut rng = Rng::new(seed);
         let info = run.class.info();
-        let enemies = kinds.iter().map(|&k| spawn(k, run.floor, &mut rng)).collect();
+        let enemies = kinds
+            .iter()
+            .map(|&k| spawn(k, run.floor, &mut rng))
+            .collect();
         let mut draw = run.deck.clone();
         rng.shuffle(&mut draw);
         Combat {
             class: run.class,
             relics: run.relics.clone(),
-            p: Fighter { hp: run.hp, max_hp: run.max_hp, block: 0, st: Default::default() },
+            p: Fighter {
+                hp: run.hp,
+                max_hp: run.max_hp,
+                block: 0,
+                st: Default::default(),
+            },
             energy: 0,
             max_energy: info.energy,
             draw_n: info.draw,
@@ -256,7 +264,11 @@ impl Combat {
                 if self.has(Relic::EyeOfTheAbyss) && !self.won() {
                     self.draw_cards(1);
                 }
-            } else if !e.dead && e.kind == EnemyKind::Morvath && e.phase == 0 && e.f.hp * 2 <= e.f.max_hp {
+            } else if !e.dead
+                && e.kind == EnemyKind::Morvath
+                && e.phase == 0
+                && e.f.hp * 2 <= e.f.max_hp
+            {
                 e.phase = 1;
                 e.step = 0;
                 e.f.st.add(St::Strength, 3);
@@ -268,7 +280,12 @@ impl Combat {
                 self.log("Morvath tears open the veil and ascends! (+3 Strength)");
             }
         }
-        if self.p.hp <= 0 && !self.events.iter().any(|e| matches!(e, Ev::Died(Who::Player))) {
+        if self.p.hp <= 0
+            && !self
+                .events
+                .iter()
+                .any(|e| matches!(e, Ev::Died(Who::Player)))
+        {
             self.events.push(Ev::Died(Who::Player));
         }
     }
@@ -361,7 +378,11 @@ impl Combat {
         self.played += 1;
         self.events.push(Ev::Played(card));
         let msg = if d.needs_target() {
-            format!("You play {} on {}.", card.name(), self.enemies[tgt].kind.name())
+            format!(
+                "You play {} on {}.",
+                card.name(),
+                self.enemies[tgt].kind.name()
+            )
         } else {
             format!("You play {}.", card.name())
         };
@@ -533,7 +554,9 @@ impl Combat {
                     self.discard.push(Card::new(CardId::Wound));
                 }
                 self.events.push(Ev::Text(pl, format!("+{n} Wound")));
-                self.log(format!("{name} curses you: {n} Wound(s) added to your discard."));
+                self.log(format!(
+                    "{name} curses you: {n} Wound(s) added to your discard."
+                ));
             }
         }
         if self.alive(me) {
