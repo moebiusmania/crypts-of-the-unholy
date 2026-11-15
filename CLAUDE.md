@@ -18,6 +18,8 @@ SNAP_DIR=/some/dir SNAP_W=120 SNAP_H=40 cargo test --release snapshot_screens --
                                                       # dump plain-text renders of each screen to SNAP_DIR
 ```
 
+**Before every commit and push**, run `cargo fmt` and make sure `cargo fmt --check` passes. CI (`.github/workflows/ci.yml`) fails on unformatted code. Also run `cargo clippy --release --all-targets -- -D warnings` and the test suite, since CI runs both.
+
 Tests must run single-threaded. `isolate_saves()` points `XDG_DATA_HOME` at a temp dir with `unsafe { set_var }` so tests never touch the real save. The release profile is size-optimized with `lto` and `panic = "abort"`, so release builds are slow to compile.
 
 ## Architecture
