@@ -114,9 +114,7 @@ impl Combat {
             self.gain_block(10);
         }
         if self.has(Relic::GraveDust) {
-            for i in 0..self.enemies.len() {
-                self.apply(Who::Enemy(i), St::Weak, 1);
-            }
+            self.apply_all(St::Weak, 1);
         }
     }
 
@@ -225,8 +223,20 @@ impl Combat {
     }
 
     fn gain_block(&mut self, n: i32) {
-        self.p.block += n;
-        self.events.push(Ev::Block(Who::Player, n));
+        self.add_block(Who::Player, n);
+    }
+
+    fn add_block(&mut self, w: Who, n: i32) {
+        let f = self.f(w);
+        f.block = f.block.saturating_add(n);
+        self.events.push(Ev::Block(w, n));
+    }
+
+    /// Applies a status to every enemy (dead ones are skipped by `apply`).
+    fn apply_all(&mut self, s: St, n: i32) {
+        for i in 0..self.enemies.len() {
+            self.apply(Who::Enemy(i), s, n);
+        }
     }
 
     fn heal(&mut self, w: Who, n: i32) {
@@ -324,9 +334,7 @@ impl Combat {
         }
         let aura = self.p.st.get(St::DoomAura);
         if aura > 0 {
-            for i in 0..self.enemies.len() {
-                self.apply(Who::Enemy(i), St::Doom, aura);
-            }
+            self.apply_all(St::Doom, aura);
         }
         self.energy = self.max_energy;
         let mut draw = self.draw_n;
@@ -428,11 +436,7 @@ impl Combat {
             Eff::LoseHp(n) => self.lose_hp(pl, n, true),
             Eff::Heal(n) => self.heal(pl, n),
             Eff::Apply(s, n) => self.apply(t, s, n),
-            Eff::ApplyAll(s, n) => {
-                for i in 0..self.enemies.len() {
-                    self.apply(Who::Enemy(i), s, n);
-                }
-            }
+            Eff::ApplyAll(s, n) => self.apply_all(s, n),
             Eff::Gain(s, n) => self.apply(pl, s, n),
             Eff::ComboDmg(n) => {
                 if combo {
@@ -520,14 +524,12 @@ impl Combat {
                 self.log(format!("{name} attacks {k} times."));
             }
             Intent::Defend(b) => {
-                self.enemies[i].f.block += b;
-                self.events.push(Ev::Block(me, b));
+                self.add_block(me, b);
                 self.log(format!("{name} braces itself."));
             }
             Intent::AttackDefend(n, b) => {
                 self.attack(me, pl, n);
-                self.enemies[i].f.block += b;
-                self.events.push(Ev::Block(me, b));
+                self.add_block(me, b);
                 self.log(format!("{name} strikes and raises its guard."));
             }
             Intent::Buff(s) => {
@@ -536,8 +538,7 @@ impl Combat {
             }
             Intent::BuffDefend(s, b) => {
                 self.apply(me, St::Strength, s);
-                self.enemies[i].f.block += b;
-                self.events.push(Ev::Block(me, b));
+                self.add_block(me, b);
                 self.log(format!("{name} gathers unholy power."));
             }
             Intent::Debuff(s, n) => {

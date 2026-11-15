@@ -1,3 +1,5 @@
+use std::sync::OnceLock;
+
 use ratatui::style::Color;
 use serde::{Deserialize, Serialize};
 
@@ -229,23 +231,30 @@ impl Card {
     pub fn new(id: CardId) -> Self {
         Card { id, up: false }
     }
-    pub fn def(&self) -> CardDef {
+    pub fn def(&self) -> &'static CardDef {
         def(self.id, self.up)
     }
     pub fn name(&self) -> String {
-        let d = self.def();
-        if self.up {
-            format!("{}+", d.name)
-        } else {
-            d.name.to_string()
-        }
+        let name = self.def().name;
+        if self.up { format!("{name}+") } else { name.to_string() }
     }
     pub fn upgradable(&self) -> bool {
         !self.up && self.def().kind != Kind::Curse
     }
 }
 
-pub fn def(id: CardId, up: bool) -> CardDef {
+/// Number of `CardId` variants; `Wound` is the last one.
+const CARD_COUNT: usize = CardId::Wound as usize + 1;
+
+/// Card definitions are built once on first use, so the per-frame UI and the
+/// combat rules never allocate an `effs` vector just to read a card.
+pub fn def(id: CardId, up: bool) -> &'static CardDef {
+    static DEFS: [OnceLock<CardDef>; CARD_COUNT * 2] =
+        [const { OnceLock::new() }; CARD_COUNT * 2];
+    DEFS[id as usize * 2 + up as usize].get_or_init(|| build_def(id, up))
+}
+
+fn build_def(id: CardId, up: bool) -> CardDef {
     use CardId::*;
     use Eff::*;
     use Kind::*;
