@@ -957,17 +957,15 @@ fn snapshot_svg() {
             while e < buf.area.width && buf[(e, y)].bg == bg {
                 e += 1;
             }
-            if let Color::Rgb(..) = bg {
-                if hex(bg, "") != "#08060a" {
-                    s += &format!(
-                        "<rect x=\"{:.1}\" y=\"{:.1}\" width=\"{:.1}\" height=\"{:.1}\" fill=\"{}\"/>\n",
-                        x as f32 * cw,
-                        y as f32 * ch,
-                        (e - x) as f32 * cw,
-                        ch,
-                        hex(bg, "")
-                    );
-                }
+            if matches!(bg, Color::Rgb(..)) && hex(bg, "") != "#08060a" {
+                s += &format!(
+                    "<rect x=\"{:.1}\" y=\"{:.1}\" width=\"{:.1}\" height=\"{:.1}\" fill=\"{}\"/>\n",
+                    x as f32 * cw,
+                    y as f32 * ch,
+                    (e - x) as f32 * cw,
+                    ch,
+                    hex(bg, "")
+                );
             }
             x = e;
         }

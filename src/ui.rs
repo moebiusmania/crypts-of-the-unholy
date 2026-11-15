@@ -1670,7 +1670,7 @@ fn draw_entity(
 }
 
 fn draw_slash(buf: &mut Buffer, a: Rect, age: f32, style: SlashStyle, seed: f32) {
-    if age < 0.0 || age > 0.35 || a.height == 0 {
+    if !(0.0..=0.35).contains(&age) || a.height == 0 {
         return;
     }
     let p = (age / 0.15).min(1.0);
