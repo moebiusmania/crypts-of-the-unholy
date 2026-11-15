@@ -3,7 +3,7 @@
 A dark fantasy roguelike deckbuilder for the terminal, written in Rust with ratatui.
 Descend ten floors of a cursed crypt and destroy Morvath, the Unholy Abbot. A run takes about ten minutes.
 
-![A Blood Knight fighting a Skeleton and a Plague Rat on Floor 1](assets/screenshot.svg)
+![A Blood Knight facing a Ghoul on Floor 1](assets/screenshot.svg)
 
 ## Install
 

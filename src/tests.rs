@@ -920,3 +920,67 @@ fn combat_keyboard_controls() {
     assert_eq!(cv.c.hand.len(), n - 1);
     draw(&mut term, &app);
 }
+
+/// Writes an SVG of the Floor 1 combat screen to `$SVG_OUT` (used for the README).
+#[test]
+#[ignore]
+fn snapshot_svg() {
+    use ratatui::style::{Color, Modifier};
+    isolate_saves();
+    let out = std::env::var("SVG_OUT").unwrap_or_else(|_| "screenshot.svg".into());
+    let mut term = Terminal::new(TestBackend::new(120, 40)).unwrap();
+    let mut app = App::new();
+    key(&mut app, KeyCode::Enter);
+    key(&mut app, KeyCode::Enter);
+    key(&mut app, KeyCode::Char('1'));
+    for _ in 0..60 {
+        app.update(0.1);
+    }
+    term.draw(|f| crate::ui::render(&app, f)).unwrap();
+    let buf = term.backend().buffer();
+    let (cw, ch) = (9.6f32, 20.0f32);
+    let hex = |c: Color, d: &str| match c {
+        Color::Rgb(r, g, b) => format!("#{r:02x}{g:02x}{b:02x}"),
+        _ => d.to_string(),
+    };
+    let (w, h) = (buf.area.width as f32 * cw, buf.area.height as f32 * ch);
+    let mut s = format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{}\" height=\"{}\" viewBox=\"0 0 {} {}\">\n<rect width=\"100%\" height=\"100%\" fill=\"#08060a\"/>\n<g font-family=\"'DejaVu Sans Mono','Menlo','Consolas',monospace\" font-size=\"16\" text-anchor=\"middle\">\n",
+        w, h, w, h
+    );
+    for y in 0..buf.area.height {
+        // Merge horizontal runs of identical backgrounds into one rect.
+        let mut x = 0;
+        while x < buf.area.width {
+            let bg = buf[(x, y)].bg;
+            let mut e = x + 1;
+            while e < buf.area.width && buf[(e, y)].bg == bg {
+                e += 1;
+            }
+            if let Color::Rgb(..) = bg {
+                if hex(bg, "") != "#08060a" {
+                    s += &format!(
+                        "<rect x=\"{:.1}\" y=\"{:.1}\" width=\"{:.1}\" height=\"{:.1}\" fill=\"{}\"/>\n",
+                        x as f32 * cw, y as f32 * ch, (e - x) as f32 * cw, ch, hex(bg, "")
+                    );
+                }
+            }
+            x = e;
+        }
+        for x in 0..buf.area.width {
+            let c = &buf[(x, y)];
+            let sym = c.symbol();
+            if sym.trim().is_empty() {
+                continue;
+            }
+            let sym = sym.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;");
+            let bold = if c.modifier.contains(Modifier::BOLD) { " font-weight=\"bold\"" } else { "" };
+            s += &format!(
+                "<text x=\"{:.1}\" y=\"{:.1}\" fill=\"{}\"{}>{}</text>\n",
+                x as f32 * cw + cw / 2.0, y as f32 * ch + 15.0, hex(c.fg, "#ded2b8"), bold, sym
+            );
+        }
+    }
+    s += "</g>\n</svg>\n";
+    std::fs::write(out, s).unwrap();
+}
