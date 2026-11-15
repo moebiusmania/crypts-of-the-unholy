@@ -590,7 +590,10 @@ impl App {
             self.open_overlay(Overlay::Pause);
             return;
         }
-        let n = self.run.as_ref().map_or(0, |r| r.map.get(r.floor).map_or(0, Vec::len));
+        let n = self
+            .run
+            .as_ref()
+            .map_or(0, |r| r.map.get(r.floor).map_or(0, Vec::len));
         if let Some(k) = Self::nav(&mut self.sel, n, i, true) {
             self.choose_door(k);
         }

@@ -53,7 +53,7 @@ pub enum CardId {
     DrainEssence,
     VoidShield,
     DarkInsight,
-    // Curses
+    // Curses. `Wound` must stay the last variant: `CARD_COUNT` is derived from it.
     Wound,
 }
 
@@ -236,7 +236,11 @@ impl Card {
     }
     pub fn name(&self) -> String {
         let name = self.def().name;
-        if self.up { format!("{name}+") } else { name.to_string() }
+        if self.up {
+            format!("{name}+")
+        } else {
+            name.to_string()
+        }
     }
     pub fn upgradable(&self) -> bool {
         !self.up && self.def().kind != Kind::Curse
@@ -249,8 +253,7 @@ const CARD_COUNT: usize = CardId::Wound as usize + 1;
 /// Card definitions are built once on first use, so the per-frame UI and the
 /// combat rules never allocate an `effs` vector just to read a card.
 pub fn def(id: CardId, up: bool) -> &'static CardDef {
-    static DEFS: [OnceLock<CardDef>; CARD_COUNT * 2] =
-        [const { OnceLock::new() }; CARD_COUNT * 2];
+    static DEFS: [OnceLock<CardDef>; CARD_COUNT * 2] = [const { OnceLock::new() }; CARD_COUNT * 2];
     DEFS[id as usize * 2 + up as usize].get_or_init(|| build_def(id, up))
 }
 
