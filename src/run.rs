@@ -193,6 +193,8 @@ impl RunState {
         }
         let json = serde_json::to_vec(self).map_err(std::io::Error::other)?;
         let tmp = path.with_extension("tmp");
+        // A leftover temp file would keep its old permissions, since `mode` only applies on create.
+        let _ = std::fs::remove_file(&tmp);
         let mut opts = std::fs::OpenOptions::new();
         opts.write(true).create(true).truncate(true);
         #[cfg(unix)]
