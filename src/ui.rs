@@ -100,8 +100,11 @@ fn draw_art(
             if xx < clip.x as i32 || xx >= clip.right() as i32 {
                 continue;
             }
-            if let Some(st) = style(col as i32, row as i32, ch) {
-                put(buf, xx, yy, &ch.to_string(), st);
+            if let Some(st) = style(col as i32, row as i32, ch)
+                && let Some(c) = buf.cell_mut((xx as u16, yy as u16))
+            {
+                c.set_char(ch);
+                c.set_style(st);
             }
         }
     }
@@ -142,7 +145,7 @@ fn centered(area: Rect, w: u16, h: u16) -> Rect {
 
 fn paragraph(f: &mut Frame, r: Rect, text: &str, st: Style, align: Alignment) {
     let r = r.intersection(f.area());
-    Paragraph::new(text.to_string())
+    Paragraph::new(text)
         .style(st)
         .alignment(align)
         .wrap(Wrap { trim: true })

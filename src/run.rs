@@ -10,6 +10,11 @@ use crate::theme;
 
 pub const FLOORS: usize = 10;
 
+const MAX_SAVE_BYTES: u64 = 1 << 20;
+const MAX_SANE_HP: i32 = 10_000;
+const MAX_SANE_GOLD: i32 = 1_000_000;
+const MAX_SANE_DECK: usize = 200;
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub enum RoomKind {
     Combat,
@@ -155,7 +160,7 @@ impl RunState {
         let matching: Vec<_> = pool
             .iter()
             .copied()
-            .filter(|&id| Card::new(id).def().rarity == want)
+            .filter(|&id| crate::cards::def(id, false).rarity == want)
             .collect();
         let id = if matching.is_empty() {
             *self.rng.pick(&pool)
@@ -181,19 +186,57 @@ impl RunState {
     }
 
     pub fn save(&self) -> std::io::Result<()> {
+        use std::io::Write;
         let path = save_path();
         if let Some(dir) = path.parent() {
             std::fs::create_dir_all(dir)?;
         }
-        let json = serde_json::to_string(self).map_err(std::io::Error::other)?;
+        let json = serde_json::to_vec(self).map_err(std::io::Error::other)?;
         let tmp = path.with_extension("tmp");
-        std::fs::write(&tmp, json)?;
+        let mut opts = std::fs::OpenOptions::new();
+        opts.write(true).create(true).truncate(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            opts.mode(0o600); // the save is private to the player
+        }
+        let mut f = opts.open(&tmp)?;
+        f.write_all(&json)?;
+        f.sync_all()?; // flush before the rename so a crash can't leave a torn save
+        drop(f);
         std::fs::rename(tmp, path)
     }
 
+    /// Loads the save. The file is untrusted input: it is size-capped and
+    /// validated so a corrupt or hand-edited save can't panic the UI later.
     pub fn load() -> Option<RunState> {
-        let data = std::fs::read_to_string(save_path()).ok()?;
-        serde_json::from_str(&data).ok()
+        use std::io::Read;
+        let mut data = String::new();
+        std::fs::File::open(save_path())
+            .ok()?
+            .take(MAX_SAVE_BYTES + 1)
+            .read_to_string(&mut data)
+            .ok()?;
+        if data.len() as u64 > MAX_SAVE_BYTES {
+            return None;
+        }
+        let run: RunState = serde_json::from_str(&data).ok()?;
+        run.is_valid().then_some(run)
+    }
+
+    /// Structural sanity checks that the rest of the game relies on.
+    fn is_valid(&self) -> bool {
+        self.map.len() == FLOORS
+            && self.map.iter().all(|f| (1..=3).contains(&f.len()))
+            && self.floor < FLOORS
+            && self.path.len() == self.floor
+            && self.pending.is_none_or(|p| p < self.map[self.floor].len())
+            && (1..=MAX_SANE_HP).contains(&self.max_hp)
+            && (1..=self.max_hp).contains(&self.hp)
+            && (0..=MAX_SANE_GOLD).contains(&self.gold)
+            && !self.deck.is_empty()
+            && self.deck.len() <= MAX_SANE_DECK
+            && self.relics.len() <= Relic::ALL.len()
     }
 
     pub fn delete_save() {

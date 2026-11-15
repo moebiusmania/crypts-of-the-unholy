@@ -590,8 +590,7 @@ impl App {
             self.open_overlay(Overlay::Pause);
             return;
         }
-        let r = self.run.as_ref().unwrap();
-        let n = r.map[r.floor].len();
+        let n = self.run.as_ref().map_or(0, |r| r.map.get(r.floor).map_or(0, Vec::len));
         if let Some(k) = Self::nav(&mut self.sel, n, i, true) {
             self.choose_door(k);
         }
@@ -1189,7 +1188,7 @@ impl App {
                 let pool = crate::cards::class_pool(run.class);
                 let rares: Vec<CardId> = pool
                     .into_iter()
-                    .filter(|&c| Card::new(c).def().rarity == Rarity::Rare)
+                    .filter(|&c| crate::cards::def(c, false).rarity == Rarity::Rare)
                     .collect();
                 let card = Card::new(*run.rng.pick(&rares));
                 run.deck.push(card);

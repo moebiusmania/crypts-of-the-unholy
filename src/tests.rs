@@ -706,6 +706,38 @@ fn pause_menu_paths() {
 }
 
 #[test]
+fn tampered_saves_are_rejected() {
+    use crate::run::RunState;
+    isolate_saves();
+    let run = RunState::new(Class::BloodKnight);
+    let write = |r: &RunState| {
+        r.save().unwrap();
+    };
+    write(&run);
+    assert!(RunState::load().is_some(), "a genuine save must load");
+
+    let mut bad = run.clone();
+    bad.floor = 99; // would index past the map
+    write(&bad);
+    assert!(RunState::load().is_none());
+
+    let mut bad = run.clone();
+    bad.map.clear();
+    write(&bad);
+    assert!(RunState::load().is_none());
+
+    let mut bad = run.clone();
+    bad.hp = bad.max_hp + 1;
+    write(&bad);
+    assert!(RunState::load().is_none());
+
+    let path = crate::run::save_path();
+    std::fs::write(&path, vec![b' '; (1 << 20) + 16]).unwrap();
+    assert!(RunState::load().is_none(), "oversized saves are refused");
+    RunState::delete_save();
+}
+
+#[test]
 fn unreadable_and_unwritable_saves() {
     isolate_saves();
     let path = crate::run::save_path();

@@ -168,7 +168,7 @@ impl Statuses {
     }
     pub fn add(&mut self, s: St, n: i32) {
         let v = &mut self.0[s as usize];
-        *v = (*v + n).max(0);
+        *v = v.saturating_add(n).max(0);
     }
     pub fn set(&mut self, s: St, n: i32) {
         self.0[s as usize] = n.max(0);
