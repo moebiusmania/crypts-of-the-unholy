@@ -961,7 +961,11 @@ fn snapshot_svg() {
                 if hex(bg, "") != "#08060a" {
                     s += &format!(
                         "<rect x=\"{:.1}\" y=\"{:.1}\" width=\"{:.1}\" height=\"{:.1}\" fill=\"{}\"/>\n",
-                        x as f32 * cw, y as f32 * ch, (e - x) as f32 * cw, ch, hex(bg, "")
+                        x as f32 * cw,
+                        y as f32 * ch,
+                        (e - x) as f32 * cw,
+                        ch,
+                        hex(bg, "")
                     );
                 }
             }
@@ -973,11 +977,22 @@ fn snapshot_svg() {
             if sym.trim().is_empty() {
                 continue;
             }
-            let sym = sym.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;");
-            let bold = if c.modifier.contains(Modifier::BOLD) { " font-weight=\"bold\"" } else { "" };
+            let sym = sym
+                .replace('&', "&amp;")
+                .replace('<', "&lt;")
+                .replace('>', "&gt;");
+            let bold = if c.modifier.contains(Modifier::BOLD) {
+                " font-weight=\"bold\""
+            } else {
+                ""
+            };
             s += &format!(
                 "<text x=\"{:.1}\" y=\"{:.1}\" fill=\"{}\"{}>{}</text>\n",
-                x as f32 * cw + cw / 2.0, y as f32 * ch + 15.0, hex(c.fg, "#ded2b8"), bold, sym
+                x as f32 * cw + cw / 2.0,
+                y as f32 * ch + 15.0,
+                hex(c.fg, "#ded2b8"),
+                bold,
+                sym
             );
         }
     }
